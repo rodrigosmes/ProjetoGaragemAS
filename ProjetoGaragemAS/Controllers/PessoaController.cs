@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProjetoGaragemAS.Dtos;
 using ProjetoGaragemAS.Models;
 using ProjetoGaragemAS.Data;
@@ -17,22 +18,22 @@ namespace ProjetoGaragemAS.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var pessoas = _context.Pessoas.ToList();
+            var pessoas = await _context.Pessoas.ToListAsync();
             return Ok(pessoas);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var pessoa = _context.Pessoas.Find(id);
+            var pessoa = await _context.Pessoas.FindAsync(id);
             if (pessoa == null) return NotFound("Pessoa não encontrada.");
             return Ok(pessoa);
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] PessoaCreateDto dto)
+        public async Task<IActionResult> Create([FromBody] PessoaCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -42,75 +43,77 @@ namespace ProjetoGaragemAS.Controllers
                 Email = dto.Email
             };
 
-            _context.Pessoas.Add(pessoa);
-            _context.SaveChanges();
+            await _context.Pessoas.AddAsync(pessoa);
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = pessoa.Id }, pessoa);
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] PessoaUpdateDto dto)
+        public async Task<IActionResult> Update(int id, [FromBody] PessoaUpdateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var pessoa = _context.Pessoas.Find(id);
+            var pessoa = await _context.Pessoas.FindAsync(id);
             if (pessoa == null) return NotFound("Pessoa não encontrada.");
 
             pessoa.Nome = dto.Nome;
             pessoa.Email = dto.Email;
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var pessoa = _context.Pessoas.Find(id);
+            var pessoa = await _context.Pessoas.FindAsync(id);
             if (pessoa == null) return NotFound("Pessoa não encontrada.");
 
             _context.Pessoas.Remove(pessoa);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return NoContent();
         }
 
         [HttpPost("{idPessoa}/favoritos/{idCarro}")]
-        public IActionResult AddFavorite(int idPessoa, int idCarro)
+        public async Task<IActionResult> AddFavorite(int idPessoa, int idCarro)
         {
-            var pessoa = _context.Pessoas.Find(idPessoa);
-            var carro = _context.Carros.Find(idCarro);
+            var pessoa = await _context.Pessoas.FindAsync(idPessoa);
+            var carro = await _context.Carros.FindAsync(idCarro);
 
             if (pessoa == null || carro == null)
                 return NotFound("Pessoa ou carro não encontrado.");
 
-            if (_context.Favoritos.Any(f => f.PessoaId == idPessoa && f.CarroId == idCarro))
+            if (await _context.Favoritos.AnyAsync(f => f.PessoaId == idPessoa && f.CarroId == idCarro))
                 return BadRequest("Este carro já está nos favoritos.");
 
-            _context.Favoritos.Add(new PessoaCarroFavorito { PessoaId = idPessoa, CarroId = idCarro });
-            _context.SaveChanges();
+            await _context.Favoritos.AddAsync(new PessoaCarroFavorito { PessoaId = idPessoa, CarroId = idCarro });
+            await _context.SaveChangesAsync();
             return Ok("Carro adicionado aos favoritos.");
         }
 
         [HttpDelete("{idPessoa}/favoritos/{idCarro}")]
-        public IActionResult RemoveFavorite(int idPessoa, int idCarro)
+        public async Task<IActionResult> RemoveFavorite(int idPessoa, int idCarro)
         {
-            var favorito = _context.Favoritos.FirstOrDefault(f => f.PessoaId == idPessoa && f.CarroId == idCarro);
+            var favorito = await _context.Favoritos
+                .FirstOrDefaultAsync(f => f.PessoaId == idPessoa && f.CarroId == idCarro);
+
             if (favorito == null) return NotFound("Favorito não encontrado.");
 
             _context.Favoritos.Remove(favorito);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return Ok("Carro removido dos favoritos.");
         }
 
         [HttpGet("{idPessoa}/favoritos")]
-        public IActionResult GetFavorites(int idPessoa)
+        public async Task<IActionResult> GetFavorites(int idPessoa)
         {
-            var pessoa = _context.Pessoas.Find(idPessoa);
+            var pessoa = await _context.Pessoas.FindAsync(idPessoa);
             if (pessoa == null) return NotFound("Pessoa não encontrada.");
 
-            var favoritos = _context.Favoritos
+            var favoritos = await _context.Favoritos
                 .Where(f => f.PessoaId == idPessoa)
                 .Select(f => f.Carro)
-                .ToList();
+                .ToListAsync();
 
             return Ok(favoritos);
         }

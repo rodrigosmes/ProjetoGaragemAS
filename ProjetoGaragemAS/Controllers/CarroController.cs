@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProjetoGaragemAS.Dtos;
 using ProjetoGaragemAS.Models;
 using ProjetoGaragemAS.Data;
@@ -17,22 +18,22 @@ namespace ProjetoGaragemAS.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var carros = _context.Carros.ToList();
+            var carros = await _context.Carros.ToListAsync();
             return Ok(carros);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var carro = _context.Carros.Find(id);
+            var carro = await _context.Carros.FindAsync(id);
             if (carro == null) return NotFound("Carro não encontrado.");
             return Ok(carro);
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] CarroCreateDto dto)
+        public async Task<IActionResult> Create([FromBody] CarroCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -44,17 +45,17 @@ namespace ProjetoGaragemAS.Controllers
                 Preco = dto.Preco
             };
 
-            _context.Carros.Add(carro);
-            _context.SaveChanges();
+            await _context.Carros.AddAsync(carro);
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = carro.Id }, carro);
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] CarroUpdateDto dto)
+        public async Task<IActionResult> Update(int id, [FromBody] CarroUpdateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var carro = _context.Carros.Find(id);
+            var carro = await _context.Carros.FindAsync(id);
             if (carro == null) return NotFound("Carro não encontrado.");
 
             carro.Marca = dto.Marca;
@@ -62,18 +63,18 @@ namespace ProjetoGaragemAS.Controllers
             carro.Ano = dto.Ano;
             carro.Preco = dto.Preco;
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var carro = _context.Carros.Find(id);
+            var carro = await _context.Carros.FindAsync(id);
             if (carro == null) return NotFound("Carro não encontrado.");
 
             _context.Carros.Remove(carro);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return NoContent();
         }
     }
